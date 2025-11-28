@@ -5,17 +5,10 @@ d3.json("datos_consolidados.json").then((data) => {
   // Actualizar estadísticas generales
   actualizarEstadisticas(data);
 
-  // Poblar filtros
-  poblarFiltros(data);
-
-  // Crear visualizaciones
-  crearGraficoNacionalidad(data);
+  // Crear las 3 visualizaciones principales
   crearScatterPlot(data);
   crearGraficoComunas(data);
   crearGraficoEdad(data);
-
-  // Configurar eventos de filtros
-  configurarFiltros(data);
 });
 
 function actualizarEstadisticas(data) {
@@ -31,143 +24,7 @@ function actualizarEstadisticas(data) {
   d3.select("#comunas").text(comunas);
 }
 
-function poblarFiltros(data) {
-  const nacionalidades = [...new Set(data.map((d) => d.nacionalidad))].sort();
-  const select = d3.select("#filter-nacionalidad");
-
-  nacionalidades.forEach((nac) => {
-    select.append("option").attr("value", nac).text(nac);
-  });
-}
-
-function configurarFiltros(data) {
-  // Aquí puedes implementar la lógica de filtrado
-  // que actualice todas las visualizaciones
-}
-
-// VISUALIZACIÓN 1: Sesgo por Nacionalidad
-function crearGraficoNacionalidad(data) {
-  // Agrupar por nacionalidad y calcular tasa de rechazo
-  const porNacionalidad = d3.rollup(
-    data,
-    (v) => ({
-      total: v.length,
-      rechazados: v.filter((d) => d.decision_legacy === "RECHAZADO").length,
-      tasaRechazo:
-        (v.filter((d) => d.decision_legacy === "RECHAZADO").length / v.length) *
-        100,
-    }),
-    (d) => d.nacionalidad
-  );
-
-  const datos = Array.from(porNacionalidad, ([nacionalidad, stats]) => ({
-    nacionalidad,
-    ...stats,
-  })).sort((a, b) => b.tasaRechazo - a.tasaRechazo);
-
-  // Dimensiones
-  const margin = { top: 20, right: 30, bottom: 80, left: 60 };
-  const width = 550 - margin.left - margin.right;
-  const height = 400 - margin.top - margin.bottom;
-
-  // SVG
-  const svg = d3
-    .select("#chart-nacionalidad")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  // Escalas
-  const x = d3
-    .scaleBand()
-    .domain(datos.map((d) => d.nacionalidad))
-    .range([0, width])
-    .padding(0.2);
-
-  const y = d3.scaleLinear().domain([0, 100]).range([height, 0]);
-
-  // Escala de colores (rojo más intenso = mayor rechazo)
-  const color = d3
-    .scaleSequential()
-    .domain([0, 100])
-    .interpolator(d3.interpolateReds);
-
-  // Barras
-  svg
-    .selectAll("rect")
-    .data(datos)
-    .join("rect")
-    .attr("x", (d) => x(d.nacionalidad))
-    .attr("y", (d) => y(d.tasaRechazo))
-    .attr("width", x.bandwidth())
-    .attr("height", (d) => height - y(d.tasaRechazo))
-    .attr("fill", (d) => color(d.tasaRechazo))
-    .attr("stroke", "#2c3e50")
-    .attr("stroke-width", 1)
-    .on("mouseover", function (event, d) {
-      d3.select(this).attr("opacity", 0.7);
-      mostrarTooltip(
-        event,
-        `
-                        <strong>${d.nacionalidad}</strong><br>
-                        Tasa de Rechazo: <strong>${d.tasaRechazo.toFixed(
-                          1
-                        )}%</strong><br>
-                        Total: ${d.total} clientes<br>
-                        Rechazados: ${d.rechazados}
-                    `
-      );
-    })
-    .on("mouseout", function () {
-      d3.select(this).attr("opacity", 1);
-      ocultarTooltip();
-    });
-
-  // Etiquetas de porcentaje
-  svg
-    .selectAll("text.label")
-    .data(datos)
-    .join("text")
-    .attr("class", "label")
-    .attr("x", (d) => x(d.nacionalidad) + x.bandwidth() / 2)
-    .attr("y", (d) => y(d.tasaRechazo) - 5)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "12px")
-    .attr("font-weight", "bold")
-    .attr("fill", "#2c3e50")
-    .text((d) => d.tasaRechazo.toFixed(1) + "%");
-
-  // Ejes
-  svg
-    .append("g")
-    .attr("transform", `translate(0,${height})`)
-    .call(d3.axisBottom(x))
-    .selectAll("text")
-    .attr("transform", "rotate(-45)")
-    .attr("text-anchor", "end")
-    .attr("font-size", "11px");
-
-  svg.append("g").call(
-    d3
-      .axisLeft(y)
-      .ticks(10)
-      .tickFormat((d) => d + "%")
-  );
-
-  // Etiqueta eje Y
-  svg
-    .append("text")
-    .attr("class", "axis-label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -height / 2)
-    .attr("y", -45)
-    .attr("text-anchor", "middle")
-    .text("% de Rechazo");
-}
-
-// VISUALIZACIÓN 2: Scatter Plot (Ingreso vs Score)
+// VISUALIZACIÓN 1: Scatter Plot (Ingreso vs Score - Nacionalidad)
 function crearScatterPlot(data) {
   // Tomar muestra para mejor rendimiento (opcional)
   const muestra = data.filter((d, i) => i % 5 === 0);
@@ -278,7 +135,7 @@ function crearScatterPlot(data) {
   });
 }
 
-// VISUALIZACIÓN 3: Top Comunas con mayor rechazo
+// VISUALIZACIÓN 2: Top 10 Comunas con Mayor Rechazo
 function crearGraficoComunas(data) {
   // Agrupar por comuna
   const porComuna = d3.rollup(
@@ -380,7 +237,7 @@ function crearGraficoComunas(data) {
     .text("% de Rechazo");
 }
 
-// VISUALIZACIÓN 4: Grupos etarios
+// VISUALIZACIÓN 3: Rechazo por Grupo Etario
 function crearGraficoEdad(data) {
   // Crear grupos de edad
   const dataConGrupo = data.map((d) => ({

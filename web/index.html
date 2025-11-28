@@ -32,53 +32,18 @@
             </div>
         </div>
 
-        <!-- Filtros interactivos -->
-        <div class="filters">
-            <div class="filter-group">
-                <label>Filtrar por Nacionalidad:</label>
-                <select id="filter-nacionalidad">
-                    <option value="todas">Todas</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Filtrar por Decisión:</label>
-                <select id="filter-decision">
-                    <option value="todas">Todas</option>
-                    <option value="APROBADO">Aprobado</option>
-                    <option value="RECHAZADO">Rechazado</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Filtrar por Sexo:</label>
-                <select id="filter-sexo">
-                    <option value="todos">Todos</option>
-                    <option value="F">Femenino</option>
-                    <option value="M">Masculino</option>
-                </select>
-            </div>
-        </div>
-
         <!-- Dashboard de visualizaciones -->
         <div class="dashboard">
-            <!-- Visualización 1: Sesgo por Nacionalidad -->
+            <!-- Visualización 1: Ingreso vs Score (Nacionalidad) -->
             <div class="chart-container">
-                <div class="chart-title">📊 Sesgo por Nacionalidad</div>
+                <div class="chart-title">🌍 Pregunta 2: ¿Se castiga el score solo por ser extranjero?</div>
                 <div class="chart-description">
-                    Tasa de rechazo por nacionalidad. Evidencia de discriminación extrema.
-                </div>
-                <div id="chart-nacionalidad"></div>
-            </div>
-
-            <!-- Visualización 2: Ingreso vs Score -->
-            <div class="chart-container">
-                <div class="chart-title">💰 Ingreso vs Score de Riesgo</div>
-                <div class="chart-description">
-                    Relación entre ingresos y score. Color por nacionalidad.
+                    Comparación de scores entre chilenos y extranjeros con niveles de ingreso similares.
                 </div>
                 <div id="chart-scatter"></div>
             </div>
 
-            <!-- Visualización 3: Sesgo por Comuna -->
+            <!-- Visualización 2: Sesgo por Comuna -->
             <div class="chart-container">
                 <div class="chart-title">🏘️ Top 10 Comunas con Mayor Rechazo</div>
                 <div class="chart-description">
@@ -87,11 +52,11 @@
                 <div id="chart-comunas"></div>
             </div>
 
-            <!-- Visualización 4: Distribución por Edad -->
+            <!-- Visualización 3: Distribución por Edad -->
             <div class="chart-container">
-                <div class="chart-title">👥 Decisiones por Grupo Etario</div>
+                <div class="chart-title">👥 Pregunta 3: ¿Existen grupos de edad excluidos?</div>
                 <div class="chart-description">
-                    Análisis de aprobaciones y rechazos por edad.
+                    Análisis de tasas de aprobación y rechazo por grupo etario.
                 </div>
                 <div id="chart-edad"></div>
             </div>
