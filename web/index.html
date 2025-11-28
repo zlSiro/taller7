@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Sesgos - Scoring Turing</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Análisis de Sesgos: Modelo "Scoring Turing"</h1>
+        <p class="subtitle">Evidencia de discriminación algorítmica en decisiones crediticias</p>
+
+        <!-- Estadísticas generales -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-clientes">-</div>
+                <div class="stat-label">Total Clientes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="tasa-aprobacion">-</div>
+                <div class="stat-label">Tasa de Aprobación</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="nacionalidades">-</div>
+                <div class="stat-label">Nacionalidades</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="comunas">-</div>
+                <div class="stat-label">Comunas</div>
+            </div>
+        </div>
+
+        <!-- Filtros interactivos -->
+        <div class="filters">
+            <div class="filter-group">
+                <label>Filtrar por Nacionalidad:</label>
+                <select id="filter-nacionalidad">
+                    <option value="todas">Todas</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Filtrar por Decisión:</label>
+                <select id="filter-decision">
+                    <option value="todas">Todas</option>
+                    <option value="APROBADO">Aprobado</option>
+                    <option value="RECHAZADO">Rechazado</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Filtrar por Sexo:</label>
+                <select id="filter-sexo">
+                    <option value="todos">Todos</option>
+                    <option value="F">Femenino</option>
+                    <option value="M">Masculino</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Dashboard de visualizaciones -->
+        <div class="dashboard">
+            <!-- Visualización 1: Sesgo por Nacionalidad -->
+            <div class="chart-container">
+                <div class="chart-title">📊 Sesgo por Nacionalidad</div>
+                <div class="chart-description">
+                    Tasa de rechazo por nacionalidad. Evidencia de discriminación extrema.
+                </div>
+                <div id="chart-nacionalidad"></div>
+            </div>
+
+            <!-- Visualización 2: Ingreso vs Score -->
+            <div class="chart-container">
+                <div class="chart-title">💰 Ingreso vs Score de Riesgo</div>
+                <div class="chart-description">
+                    Relación entre ingresos y score. Color por nacionalidad.
+                </div>
+                <div id="chart-scatter"></div>
+            </div>
+
+            <!-- Visualización 3: Sesgo por Comuna -->
+            <div class="chart-container">
+                <div class="chart-title">🏘️ Top 10 Comunas con Mayor Rechazo</div>
+                <div class="chart-description">
+                    Comunas con mayor tasa de rechazo crediticio.
+                </div>
+                <div id="chart-comunas"></div>
+            </div>
+
+            <!-- Visualización 4: Distribución por Edad -->
+            <div class="chart-container">
+                <div class="chart-title">👥 Decisiones por Grupo Etario</div>
+                <div class="chart-description">
+                    Análisis de aprobaciones y rechazos por edad.
+                </div>
+                <div id="chart-edad"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip global -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
