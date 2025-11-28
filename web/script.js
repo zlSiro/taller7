@@ -6,8 +6,8 @@ d3.json("datos_consolidados.json").then((data) => {
   actualizarEstadisticas(data);
 
   // Crear las 3 visualizaciones principales
-  crearScatterPlot(data);
   crearGraficoComunas(data);
+  crearGraficoNacionalidadScore(data);
   crearGraficoEdad(data);
 });
 
@@ -24,118 +24,7 @@ function actualizarEstadisticas(data) {
   d3.select("#comunas").text(comunas);
 }
 
-// VISUALIZACIÓN 1: Scatter Plot (Ingreso vs Score - Nacionalidad)
-function crearScatterPlot(data) {
-  // Tomar muestra para mejor rendimiento (opcional)
-  const muestra = data.filter((d, i) => i % 5 === 0);
-
-  const margin = { top: 20, right: 120, bottom: 60, left: 80 };
-  const width = 550 - margin.left - margin.right;
-  const height = 400 - margin.top - margin.bottom;
-
-  const svg = d3
-    .select("#chart-scatter")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  // Escalas
-  const x = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, (d) => d.ingresos_mensuales)])
-    .range([0, width]);
-
-  const y = d3.scaleLinear().domain([0, 1000]).range([height, 0]);
-
-  // Escala de colores por nacionalidad
-  const nacionalidades = [...new Set(data.map((d) => d.nacionalidad))];
-  const colorScale = d3
-    .scaleOrdinal()
-    .domain(nacionalidades)
-    .range(d3.schemeSet2);
-
-  // Círculos
-  svg
-    .selectAll("circle")
-    .data(muestra)
-    .join("circle")
-    .attr("cx", (d) => x(d.ingresos_mensuales))
-    .attr("cy", (d) => y(d.score_riesgo))
-    .attr("r", 4)
-    .attr("fill", (d) => colorScale(d.nacionalidad))
-    .attr("opacity", 0.6)
-    .attr("stroke", "#fff")
-    .attr("stroke-width", 0.5)
-    .on("mouseover", function (event, d) {
-      d3.select(this).attr("r", 7).attr("opacity", 1);
-      mostrarTooltip(
-        event,
-        `
-                        <strong>Cliente #${d.id_cliente}</strong><br>
-                        Nacionalidad: ${d.nacionalidad}<br>
-                        Ingresos: $${d.ingresos_mensuales.toLocaleString()}<br>
-                        Score: ${d.score_riesgo}<br>
-                        Decisión: <strong>${d.decision_legacy}</strong>
-                    `
-      );
-    })
-    .on("mouseout", function () {
-      d3.select(this).attr("r", 4).attr("opacity", 0.6);
-      ocultarTooltip();
-    });
-
-  // Ejes
-  svg
-    .append("g")
-    .attr("transform", `translate(0,${height})`)
-    .call(
-      d3
-        .axisBottom(x)
-        .ticks(5)
-        .tickFormat((d) => "$" + (d / 1000).toFixed(0) + "K")
-    );
-
-  svg.append("g").call(d3.axisLeft(y));
-
-  // Etiquetas
-  svg
-    .append("text")
-    .attr("class", "axis-label")
-    .attr("x", width / 2)
-    .attr("y", height + 45)
-    .attr("text-anchor", "middle")
-    .text("Ingresos Mensuales");
-
-  svg
-    .append("text")
-    .attr("class", "axis-label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -height / 2)
-    .attr("y", -60)
-    .attr("text-anchor", "middle")
-    .text("Score de Riesgo");
-
-  // Leyenda
-  const legend = svg
-    .append("g")
-    .attr("transform", `translate(${width + 10}, 0)`);
-
-  nacionalidades.forEach((nac, i) => {
-    const g = legend.append("g").attr("transform", `translate(0, ${i * 20})`);
-
-    g.append("circle").attr("r", 5).attr("fill", colorScale(nac));
-
-    g.append("text")
-      .attr("x", 10)
-      .attr("y", 4)
-      .attr("font-size", "10px")
-      .text(nac);
-  });
-}
-
-// VISUALIZACIÓN 2: Top 10 Comunas con Mayor Rechazo
+// VISUALIZACIÓN 1: Comunas con Mayor Rechazo (NUEVO ORDEN)
 function crearGraficoComunas(data) {
   // Agrupar por comuna
   const porComuna = d3.rollup(
@@ -158,8 +47,8 @@ function crearGraficoComunas(data) {
     .sort((a, b) => b.tasaRechazo - a.tasaRechazo)
     .slice(0, 10);
 
-  const margin = { top: 20, right: 30, bottom: 100, left: 60 };
-  const width = 550 - margin.left - margin.right;
+  const margin = { top: 40, right: 30, bottom: 100, left: 60 };
+  const width = 1200 - margin.left - margin.right;
   const height = 400 - margin.top - margin.bottom;
 
   const svg = d3
@@ -235,6 +124,181 @@ function crearGraficoComunas(data) {
     .attr("y", -45)
     .attr("text-anchor", "middle")
     .text("% de Rechazo");
+}
+
+// VISUALIZACIÓN 2: Nacionalidad vs Score (Barras Agrupadas por Cuartiles)
+function crearGraficoNacionalidadScore(data) {
+  // Calcular cuartiles de ingreso
+  const ingresos = data.map(d => d.ingresos_mensuales).sort((a, b) => a - b);
+  const q1 = d3.quantile(ingresos, 0.25);
+  const q2 = d3.quantile(ingresos, 0.50);
+  const q3 = d3.quantile(ingresos, 0.75);
+
+  // Clasificar por cuartil
+  const dataConCuartil = data.map(d => ({
+    ...d,
+    cuartil: d.ingresos_mensuales <= q1 ? 'Q1 (Bajos)' :
+             d.ingresos_mensuales <= q2 ? 'Q2 (Medio-Bajos)' :
+             d.ingresos_mensuales <= q3 ? 'Q3 (Medio-Altos)' : 'Q4 (Altos)'
+  }));
+
+  // Agrupar por cuartil y nacionalidad
+  const cuartiles = ['Q1 (Bajos)', 'Q2 (Medio-Bajos)', 'Q3 (Medio-Altos)', 'Q4 (Altos)'];
+  const datos = cuartiles.map(cuartil => {
+    const enCuartil = dataConCuartil.filter(d => d.cuartil === cuartil);
+    const chilenos = enCuartil.filter(d => d.nacionalidad === 'Chilena');
+    const extranjeros = enCuartil.filter(d => d.nacionalidad !== 'Chilena');
+
+    return {
+      cuartil,
+      scoreChilenos: chilenos.length > 0 ? d3.mean(chilenos, d => d.score_riesgo) : 0,
+      scoreExtranjeros: extranjeros.length > 0 ? d3.mean(extranjeros, d => d.score_riesgo) : 0
+    };
+  });
+
+  const margin = { top: 40, right: 30, bottom: 80, left: 80 };
+  const width = 600 - margin.left - margin.right;
+  const height = 400 - margin.top - margin.bottom;
+
+  const svg = d3
+    .select("#chart-nacionalidad-score")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Escalas
+  const x0 = d3.scaleBand()
+    .domain(cuartiles)
+    .range([0, width])
+    .padding(0.2);
+
+  const x1 = d3.scaleBand()
+    .domain(['Chilenos', 'Extranjeros'])
+    .range([0, x0.bandwidth()])
+    .padding(0.05);
+
+  const y = d3.scaleLinear()
+    .domain([0, 800])
+    .range([height, 0]);
+
+  const color = d3.scaleOrdinal()
+    .domain(['Chilenos', 'Extranjeros'])
+    .range(['#27ae60', '#e67e22']);
+
+  // Barras para Chilenos
+  svg.selectAll('.bar-chilenos')
+    .data(datos)
+    .join('rect')
+    .attr('class', 'bar-chilenos')
+    .attr('x', d => x0(d.cuartil) + x1('Chilenos'))
+    .attr('y', d => y(d.scoreChilenos))
+    .attr('width', x1.bandwidth())
+    .attr('height', d => height - y(d.scoreChilenos))
+    .attr('fill', color('Chilenos'))
+    .on('mouseover', function(event, d) {
+      d3.select(this).attr('opacity', 0.7);
+      mostrarTooltip(event, `<strong>Chilenos - ${d.cuartil}</strong><br>Score Promedio: ${d.scoreChilenos.toFixed(0)}`);
+    })
+    .on('mouseout', function() {
+      d3.select(this).attr('opacity', 1);
+      ocultarTooltip();
+    });
+
+  // Barras para Extranjeros
+  svg.selectAll('.bar-extranjeros')
+    .data(datos)
+    .join('rect')
+    .attr('class', 'bar-extranjeros')
+    .attr('x', d => x0(d.cuartil) + x1('Extranjeros'))
+    .attr('y', d => y(d.scoreExtranjeros))
+    .attr('width', x1.bandwidth())
+    .attr('height', d => height - y(d.scoreExtranjeros))
+    .attr('fill', color('Extranjeros'))
+    .on('mouseover', function(event, d) {
+      d3.select(this).attr('opacity', 0.7);
+      mostrarTooltip(event, `<strong>Extranjeros - ${d.cuartil}</strong><br>Score Promedio: ${d.scoreExtranjeros.toFixed(0)}`);
+    })
+    .on('mouseout', function() {
+      d3.select(this).attr('opacity', 1);
+      ocultarTooltip();
+    });
+
+  // Etiquetas de valores
+  svg.selectAll('.label-chilenos')
+    .data(datos)
+    .join('text')
+    .attr('class', 'label-chilenos')
+    .attr('x', d => x0(d.cuartil) + x1('Chilenos') + x1.bandwidth() / 2)
+    .attr('y', d => y(d.scoreChilenos) - 5)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '11px')
+    .attr('font-weight', 'bold')
+    .attr('fill', '#2c3e50')
+    .text(d => d.scoreChilenos.toFixed(0));
+
+  svg.selectAll('.label-extranjeros')
+    .data(datos)
+    .join('text')
+    .attr('class', 'label-extranjeros')
+    .attr('x', d => x0(d.cuartil) + x1('Extranjeros') + x1.bandwidth() / 2)
+    .attr('y', d => y(d.scoreExtranjeros) - 5)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '11px')
+    .attr('font-weight', 'bold')
+    .attr('fill', '#2c3e50')
+    .text(d => d.scoreExtranjeros.toFixed(0));
+
+  // Ejes
+  svg.append('g')
+    .attr('transform', `translate(0,${height})`)
+    .call(d3.axisBottom(x0))
+    .selectAll('text')
+    .attr('transform', 'rotate(-20)')
+    .attr('text-anchor', 'end')
+    .attr('font-size', '11px');
+
+  svg.append('g')
+    .call(d3.axisLeft(y));
+
+  // Etiquetas de ejes
+  svg.append('text')
+    .attr('x', width / 2)
+    .attr('y', height + 65)
+    .attr('text-anchor', 'middle')
+    .style('font-size', '12px')
+    .style('font-weight', 'bold')
+    .text('Nivel de Ingresos (Cuartiles)');
+
+  svg.append('text')
+    .attr('transform', 'rotate(-90)')
+    .attr('x', -height / 2)
+    .attr('y', -60)
+    .attr('text-anchor', 'middle')
+    .style('font-size', '12px')
+    .style('font-weight', 'bold')
+    .text('Score de Riesgo Promedio');
+
+  // Leyenda
+  const legend = svg.append('g')
+    .attr('transform', `translate(${width - 150}, -20)`);
+
+  ['Chilenos', 'Extranjeros'].forEach((grupo, i) => {
+    const g = legend.append('g').attr('transform', `translate(${i * 80}, 0)`);
+    g.append('rect').attr('width', 18).attr('height', 18).attr('fill', color(grupo));
+    g.append('text').attr('x', 24).attr('y', 13).attr('font-size', '12px').text(grupo);
+  });
+
+  // Mensaje de conclusión
+  svg.append('text')
+    .attr('x', width / 2)
+    .attr('y', -15)
+    .attr('text-anchor', 'middle')
+    .attr('font-size', '13px')
+    .attr('font-weight', 'bold')
+    .attr('fill', '#e74c3c')
+    .text('⚠️ Extranjeros reciben scores más bajos en TODOS los niveles de ingreso');
 }
 
 // VISUALIZACIÓN 3: Rechazo por Grupo Etario

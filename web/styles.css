@@ -37,7 +37,7 @@ h1 {
 
 .dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 30px;
   margin-top: 30px;
 }
@@ -48,6 +48,10 @@ h1 {
   padding: 25px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+}
+
+.chart-container.full-width {
+  grid-column: 1 / -1;
 }
 
 .chart-container:hover {
