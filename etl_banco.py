@@ -81,14 +81,14 @@ GROUP BY
     s.tasa_interes_anual;
 """
 
-def fetch_data():
+def extraer_data():
     
     with engine.connect() as conn:
         rows = conn.execute(text(QUERY)).mappings().all()
     return rows
 
 
-def build_payload_rows(rows):
+def columnas_payload(rows):
     clientes = []
     for r in rows:
         cliente = {
@@ -128,19 +128,19 @@ def call_predict_api(clientes):
         print("Error al conectar con la la API: ", e)
         return {"error: ": str(e)}
 
-def save_json(data):
+def guardar_json(data):
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         
         
 def main():
-    rows = fetch_data()
-    clientes_json = build_payload_rows(rows)
+    rows = extraer_data()
+    clientes_json = columnas_payload(rows)
     
     print(f"Enviando {len(clientes_json)} clientes a la API")
     predictions = call_predict_api(clientes_json)
     
-    save_json(predictions)
+    guardar_json(predictions)
     
     print("Archivo data.json generado correctamente")
     
