@@ -298,7 +298,6 @@ function crearGraficoNacionalidadScore(data) {
     .attr('font-size', '13px')
     .attr('font-weight', 'bold')
     .attr('fill', '#e74c3c')
-    .text('⚠️ Extranjeros reciben scores más bajos en TODOS los niveles de ingreso');
 }
 
 // VISUALIZACIÓN 3: Rechazo por Grupo Etario
